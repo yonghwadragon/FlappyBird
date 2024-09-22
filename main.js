@@ -22,6 +22,17 @@ let currentBackground = 'day'; // 'day' 또는 'night'
 // 최고 점수 초기화
 highScoreElement.textContent = highScore;
 
+// 사운드 로드
+const sounds = {
+    flap: new Audio('music/flap.wav'),
+    hit: new Audio('music/hit.wav'),
+    score: new Audio('music/score.wav'),
+    gameSound: new Audio('music/gamesound.wav')
+};
+
+// 배경 음악 루프 설정
+sounds.gameSound.loop = true;
+
 // 이미지 로드
 const images = {
     backgroundDay: new Image(),
@@ -48,7 +59,7 @@ for (let key in images) {
     images[key].onload = () => {
         imagesLoaded++;
         if (imagesLoaded === totalImages) {
-            // 모든 이미지가 로드된 후 게임을 준비할 수 있음
+            // 모든 이미지가 로드된 후 추가 작업 가능
             // 예: 초기 배경 그리기 등
         }
     };
@@ -93,7 +104,10 @@ class Bird {
         setTimeout(() => {
             this.flapping = false;
         }, 100); // 날개짓 상태 지속 시간 (100ms)
-        // 사운드 제거
+
+        // flap.wav 재생
+        sounds.flap.currentTime = 0;
+        sounds.flap.play();
     }
 
     reset() {
@@ -147,7 +161,9 @@ class Pipe {
                 highScoreElement.textContent = highScore;
             }
 
-            // 사운드 제거
+            // score.wav 재생 (10점마다)
+            sounds.score.currentTime = 0;
+            sounds.score.play();
         }
 
         // 충돌 감지
@@ -242,6 +258,10 @@ function startGame() {
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
     resetGame();
+
+    // 배경 음악 재생
+    sounds.gameSound.currentTime = 0;
+    sounds.gameSound.play();
 }
 
 // 게임 오버 함수
@@ -250,6 +270,13 @@ function gameOver() {
         gameState = 'gameover';
         finalScoreElement.textContent = score;
         gameOverScreen.classList.remove('hidden');
+
+        // 배경 음악 중지
+        sounds.gameSound.pause();
+
+        // hit.wav 재생
+        sounds.hit.currentTime = 0;
+        sounds.hit.play();
     }
 }
 
