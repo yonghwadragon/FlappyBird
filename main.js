@@ -27,7 +27,7 @@ const sounds = {
     flap: new Audio('music/flap.wav'),
     hit: new Audio('music/hit.wav'),
     score: new Audio('music/score.wav'),
-    gameSound: new Audio('music/gamesound.wav')
+    gameSound: new Audio('music/Flying Through the Sky.wav')
 };
 
 // 배경 음악 루프 설정
