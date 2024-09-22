@@ -13,7 +13,7 @@ const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
 
 // 게임 변수 설정
-let frames = 0;
+let lastTime = 0; // 이전 프레임 시간
 let gameState = 'start'; // 'start', 'playing', 'gameover'
 let score = 0;
 let highScore = localStorage.getItem('highScore') || 0;
@@ -72,8 +72,8 @@ class Bird {
         this.y = canvas.height / 2;
         this.width = 34; // 이미지 너비에 맞게 조절
         this.height = 24; // 이미지 높이에 맞게 조절
-        this.gravity = 0.25;
-        this.lift = -4.6;
+        this.gravity = 800; // 픽셀/초² 단위로 변경
+        this.lift = -300; // 픽셀/초 단위로 변경
         this.velocity = 0;
         this.flapping = false; // 새가 날개짓 중인지 여부
     }
@@ -88,9 +88,9 @@ class Bird {
         }
     }
 
-    update() {
-        this.velocity += this.gravity;
-        this.y += this.velocity;
+    update(deltaTime) {
+        this.velocity += this.gravity * deltaTime;
+        this.y += this.velocity * deltaTime;
 
         // 바닥 또는 천장 충돌 감지
         if (this.y + this.height / 2 >= canvas.height || this.y - this.height / 2 <= 0) {
@@ -123,7 +123,7 @@ class Pipe {
         this.x = canvas.width;
         this.width = 52; // 파이프 이미지 너비에 맞게 조절
         this.gap = 120;
-        this.speed = 2;
+        this.speed = 200; // 픽셀/초 단위로 변경
         this.top = Math.floor(Math.random() * (canvas.height / 2)) + 20;
         this.bottom = this.top + this.gap;
         this.counted = false;
@@ -136,8 +136,8 @@ class Pipe {
         ctx.drawImage(images.pipeBottom, this.x, this.bottom, this.width, images.pipeBottom.height);
     }
 
-    update() {
-        this.x -= this.speed;
+    update(deltaTime) {
+        this.x -= this.speed * deltaTime;
 
         // 파이프가 화면을 벗어나면 제거
         if (this.x + this.width < 0) {
@@ -220,24 +220,32 @@ restartButton.addEventListener('click', function () {
 });
 
 // 게임 루프 함수
-function gameLoop() {
+function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const deltaTime = (timestamp - lastTime) / 1000; // 초 단위
+    lastTime = timestamp;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 배경 그리기
     drawBackground();
 
     if (gameState === 'playing') {
-        bird.update();
+        bird.update(deltaTime);
         bird.draw();
 
         // 파이프 생성
-        if (frames % 90 === 0) { // 파이프 생성 속도 조절
+        // 타임스탬프 기반으로 파이프 생성 간격 조절 (예: 1.5초마다)
+        if (!bird.lastPipeTime) bird.lastPipeTime = 0;
+        bird.lastPipeTime += deltaTime;
+        if (bird.lastPipeTime > 1.5) { // 파이프 생성 간격: 1.5초
             pipes.push(new Pipe());
+            bird.lastPipeTime = 0;
         }
 
         // 파이프 업데이트 및 그리기
         pipes.forEach(pipe => {
-            pipe.update();
+            pipe.update(deltaTime);
             pipe.draw();
         });
 
@@ -287,7 +295,8 @@ function resetGame() {
     pipes = [];
     bird.reset();
     currentBackground = 'day'; // 게임 리셋 시 배경을 낮으로 초기화
+    bird.lastPipeTime = 0;
 }
 
 // 게임 루프 시작
-gameLoop();
+requestAnimationFrame(gameLoop);
