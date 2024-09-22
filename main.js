@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 // 게임 오버 화면 요소
 const gameOverScreen = document.getElementById('gameOverScreen');
 const finalScoreElement = document.getElementById('finalScore');
+const highScoreElement = document.getElementById('highScore');
 const restartButton = document.getElementById('restartButton');
 
 // 시작 화면 요소
@@ -15,14 +16,18 @@ const startButton = document.getElementById('startButton');
 let frames = 0;
 let gameState = 'start'; // 'start', 'playing', 'gameover'
 let score = 0;
+let highScore = localStorage.getItem('highScore') || 0;
 let currentBackground = 'day'; // 'day' 또는 'night'
+
+// 최고 점수 초기화
+highScoreElement.textContent = highScore;
 
 // 이미지 로드
 const images = {
     backgroundDay: new Image(),
     backgroundNight: new Image(),
     bird: new Image(),
-    // bird2: new Image(), // bird2.png 준비 중
+    bird2: new Image(), // bird2.png 준비 완료
     pipeTop: new Image(),
     pipeBottom: new Image()
 };
@@ -31,9 +36,9 @@ const images = {
 images.backgroundDay.src = 'images/backgroundDay.png';
 images.backgroundNight.src = 'images/backgroundNight.png';
 images.bird.src = 'images/bird.png';
+images.bird2.src = 'images/bird2.png'; // 새의 날개짓 애니메이션 이미지
 images.pipeTop.src = 'images/pipeTop.png';
 images.pipeBottom.src = 'images/pipeBottom.png';
-// images.bird2.src = 'images/bird2.png'; // bird2.png 준비 중
 
 // 이미지 로드 완료 확인
 let imagesLoaded = 0;
@@ -43,7 +48,7 @@ for (let key in images) {
     images[key].onload = () => {
         imagesLoaded++;
         if (imagesLoaded === totalImages) {
-            // 모든 이미지가 로드된 후에 필요한 작업을 할 수 있음
+            // 모든 이미지가 로드된 후 게임을 준비할 수 있음
             // 예: 초기 배경 그리기 등
         }
     };
@@ -54,7 +59,8 @@ class Bird {
     constructor() {
         this.x = 50;
         this.y = canvas.height / 2;
-        this.radius = 12; // 새의 크기 조절 (이미지 크기에 맞게 조절 필요)
+        this.width = 34; // 이미지 너비에 맞게 조절
+        this.height = 24; // 이미지 높이에 맞게 조절
         this.gravity = 0.25;
         this.lift = -4.6;
         this.velocity = 0;
@@ -62,14 +68,12 @@ class Bird {
     }
 
     draw() {
-        if (this.flapping && images.bird2) {
-            // 새가 날개짓 중일 때 bird2.png 사용 (bird2.png 준비 중이므로 주석 처리)
-            // ctx.drawImage(images.bird2, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
-            // bird2.png 준비 중이므로 bird.png 사용
-            ctx.drawImage(images.bird, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+        if (this.flapping) {
+            // 새가 날개짓 중일 때 bird2.png 사용
+            ctx.drawImage(images.bird2, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
         } else {
             // 평소에는 bird.png 사용
-            ctx.drawImage(images.bird, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+            ctx.drawImage(images.bird, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
         }
     }
 
@@ -78,7 +82,7 @@ class Bird {
         this.y += this.velocity;
 
         // 바닥 또는 천장 충돌 감지
-        if (this.y + this.radius >= canvas.height || this.y - this.radius <= 0) {
+        if (this.y + this.height / 2 >= canvas.height || this.y - this.height / 2 <= 0) {
             gameOver();
         }
     }
@@ -126,7 +130,7 @@ class Pipe {
             pipes.shift();
         }
 
-        // 점수 증가
+        // 점수 증가 및 배경 전환
         if (!this.counted && this.x + this.width < bird.x) {
             score++;
             this.counted = true;
@@ -136,13 +140,20 @@ class Pipe {
                 currentBackground = currentBackground === 'day' ? 'night' : 'day';
             }
 
+            // 최고 점수 업데이트
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreElement.textContent = highScore;
+            }
+
             // 사운드 제거
         }
 
         // 충돌 감지
         if (
-            (bird.x + bird.radius > this.x && bird.x - bird.radius < this.x + this.width) &&
-            (bird.y - bird.radius < this.top || bird.y + bird.radius > this.bottom)
+            (bird.x + bird.width / 2 > this.x && bird.x - bird.width / 2 < this.x + this.width) &&
+            (bird.y - bird.height / 2 < this.top || bird.y + bird.height / 2 > this.bottom)
         ) {
             gameOver();
         }
