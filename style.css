@@ -1,7 +1,7 @@
 body {
   margin: 0;
   overflow: hidden; /* 스크롤바 제거 */
-  background: #70c5ce; /* 배경색을 하늘색으로 설정 */
+  background: #70c5ce; /* 기본 배경색을 하늘색으로 설정 */
 }
 
 #gameContainer {
@@ -14,7 +14,7 @@ body {
 canvas {
   width: 100%;
   height: auto;
-  background: #70c5ce; /* 캔버스 배경색 */
+  background: #70c5ce; /* 캔버스 배경색 (JavaScript에서 배경 이미지로 덮어씌움) */
   display: block;
 }
 

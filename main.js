@@ -15,90 +15,147 @@ const startButton = document.getElementById('startButton');
 let frames = 0;
 let gameState = 'start'; // 'start', 'playing', 'gameover'
 let score = 0;
+let currentBackground = 'day'; // 'day' 또는 'night'
+
+// 이미지 로드
+const images = {
+    backgroundDay: new Image(),
+    backgroundNight: new Image(),
+    bird: new Image(),
+    // bird2: new Image(), // bird2.png 준비 중
+    pipeTop: new Image(),
+    pipeBottom: new Image()
+};
+
+// 이미지 소스 설정
+images.backgroundDay.src = 'images/backgroundDay.png';
+images.backgroundNight.src = 'images/backgroundNight.png';
+images.bird.src = 'images/bird.png';
+images.pipeTop.src = 'images/pipeTop.png';
+images.pipeBottom.src = 'images/pipeBottom.png';
+// images.bird2.src = 'images/bird2.png'; // bird2.png 준비 중
+
+// 이미지 로드 완료 확인
+let imagesLoaded = 0;
+const totalImages = Object.keys(images).length;
+
+for (let key in images) {
+    images[key].onload = () => {
+        imagesLoaded++;
+        if (imagesLoaded === totalImages) {
+            // 모든 이미지가 로드된 후에 필요한 작업을 할 수 있음
+            // 예: 초기 배경 그리기 등
+        }
+    };
+}
 
 // 새 클래스 정의
 class Bird {
-  constructor() {
-    this.x = 50;
-    this.y = canvas.height / 2;
-    this.radius = 12; // 새를 원으로 표현
-    this.gravity = 0.25;
-    this.lift = -4.6;
-    this.velocity = 0;
-  }
-
-  draw() {
-    ctx.fillStyle = 'yellow';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = 'orange';
-    ctx.stroke();
-  }
-
-  update() {
-    this.velocity += this.gravity;
-    this.y += this.velocity;
-
-    // 바닥 또는 천장 충돌 감지
-    if (this.y + this.radius >= canvas.height || this.y - this.radius <= 0) {
-      gameOver();
+    constructor() {
+        this.x = 50;
+        this.y = canvas.height / 2;
+        this.radius = 12; // 새의 크기 조절 (이미지 크기에 맞게 조절 필요)
+        this.gravity = 0.25;
+        this.lift = -4.6;
+        this.velocity = 0;
+        this.flapping = false; // 새가 날개짓 중인지 여부
     }
-  }
 
-  flap() {
-    this.velocity = this.lift;
-    // 사운드 제거
-  }
+    draw() {
+        if (this.flapping && images.bird2) {
+            // 새가 날개짓 중일 때 bird2.png 사용 (bird2.png 준비 중이므로 주석 처리)
+            // ctx.drawImage(images.bird2, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+            // bird2.png 준비 중이므로 bird.png 사용
+            ctx.drawImage(images.bird, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+        } else {
+            // 평소에는 bird.png 사용
+            ctx.drawImage(images.bird, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+        }
+    }
 
-  reset() {
-    this.y = canvas.height / 2;
-    this.velocity = 0;
-  }
+    update() {
+        this.velocity += this.gravity;
+        this.y += this.velocity;
+
+        // 바닥 또는 천장 충돌 감지
+        if (this.y + this.radius >= canvas.height || this.y - this.radius <= 0) {
+            gameOver();
+        }
+    }
+
+    flap() {
+        this.velocity = this.lift;
+        this.flapping = true;
+        setTimeout(() => {
+            this.flapping = false;
+        }, 100); // 날개짓 상태 지속 시간 (100ms)
+        // 사운드 제거
+    }
+
+    reset() {
+        this.y = canvas.height / 2;
+        this.velocity = 0;
+        this.flapping = false;
+    }
 }
 
 // 파이프 클래스 정의
 class Pipe {
-  constructor() {
-    this.x = canvas.width;
-    this.width = 52;
-    this.gap = 120;
-    this.speed = 2;
-    this.top = Math.floor(Math.random() * (canvas.height / 2)) + 20;
-    this.bottom = this.top + this.gap;
-    this.counted = false;
-  }
-
-  draw() {
-    ctx.fillStyle = 'green';
-    // 위쪽 파이프
-    ctx.fillRect(this.x, 0, this.width, this.top);
-    // 아래쪽 파이프
-    ctx.fillRect(this.x, this.bottom, this.width, canvas.height - this.bottom);
-  }
-
-  update() {
-    this.x -= this.speed;
-
-    // 파이프가 화면을 벗어나면 제거
-    if (this.x + this.width < 0) {
-      pipes.shift();
+    constructor() {
+        this.x = canvas.width;
+        this.width = 52; // 파이프 이미지 너비에 맞게 조절
+        this.gap = 120;
+        this.speed = 2;
+        this.top = Math.floor(Math.random() * (canvas.height / 2)) + 20;
+        this.bottom = this.top + this.gap;
+        this.counted = false;
     }
 
-    // 점수 증가
-    if (!this.counted && this.x + this.width < bird.x) {
-      score++;
-      this.counted = true;
+    draw() {
+        // 위쪽 파이프
+        ctx.drawImage(images.pipeTop, this.x, this.top - images.pipeTop.height, this.width, images.pipeTop.height);
+        // 아래쪽 파이프
+        ctx.drawImage(images.pipeBottom, this.x, this.bottom, this.width, images.pipeBottom.height);
     }
 
-    // 충돌 감지
-    if (
-      (bird.x + bird.radius > this.x && bird.x - bird.radius < this.x + this.width) &&
-      (bird.y - bird.radius < this.top || bird.y + bird.radius > this.bottom)
-    ) {
-      gameOver();
+    update() {
+        this.x -= this.speed;
+
+        // 파이프가 화면을 벗어나면 제거
+        if (this.x + this.width < 0) {
+            pipes.shift();
+        }
+
+        // 점수 증가
+        if (!this.counted && this.x + this.width < bird.x) {
+            score++;
+            this.counted = true;
+
+            // 배경 전환
+            if (score % 10 === 0) {
+                currentBackground = currentBackground === 'day' ? 'night' : 'day';
+            }
+
+            // 사운드 제거
+        }
+
+        // 충돌 감지
+        if (
+            (bird.x + bird.radius > this.x && bird.x - bird.radius < this.x + this.width) &&
+            (bird.y - bird.radius < this.top || bird.y + bird.radius > this.bottom)
+        ) {
+            gameOver();
+        }
     }
-  }
+}
+
+// 배경 그리기 함수
+function drawBackground() {
+    if (currentBackground === 'day') {
+        ctx.drawImage(images.backgroundDay, 0, 0, canvas.width, canvas.height);
+    } else {
+        ctx.drawImage(images.backgroundNight, 0, 0, canvas.width, canvas.height);
+    }
 }
 
 // 인스턴스 생성
@@ -107,11 +164,11 @@ let pipes = [];
 
 // 입력 이벤트 설정
 document.addEventListener('keydown', function (e) {
-  if (e.code === 'Space') {
-    if (gameState === 'playing') {
-      bird.flap();
+    if (e.code === 'Space') {
+        if (gameState === 'playing') {
+            bird.flap();
+        }
     }
-  }
 });
 
 // 클릭 이벤트와 터치 이벤트 모두 처리
@@ -119,77 +176,79 @@ canvas.addEventListener('click', handleInput);
 canvas.addEventListener('touchstart', handleInput);
 
 function handleInput(e) {
-  e.preventDefault();
-  if (gameState === 'playing') {
-    bird.flap();
-  }
+    e.preventDefault();
+    if (gameState === 'playing') {
+        bird.flap();
+    }
 }
 
 // 시작 버튼 클릭 시 게임 시작
 startButton.addEventListener('click', function () {
-  startGame();
+    startGame();
 });
 
 // 재시작 버튼 클릭 시 게임 재시작
 restartButton.addEventListener('click', function () {
-  resetGame();
+    startGame();
 });
 
 // 게임 루프 함수
 function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (gameState === 'playing') {
-    bird.update();
-    bird.draw();
+    // 배경 그리기
+    drawBackground();
 
-    // 파이프 생성
-    if (frames % 90 === 0) { // 파이프 생성 속도 조절
-      pipes.push(new Pipe());
+    if (gameState === 'playing') {
+        bird.update();
+        bird.draw();
+
+        // 파이프 생성
+        if (frames % 90 === 0) { // 파이프 생성 속도 조절
+            pipes.push(new Pipe());
+        }
+
+        // 파이프 업데이트 및 그리기
+        pipes.forEach(pipe => {
+            pipe.update();
+            pipe.draw();
+        });
+
+        // 점수 표시
+        ctx.fillStyle = 'white';
+        ctx.font = '24px Arial';
+        ctx.fillText(`점수: ${score}`, 10, 30);
+
+        frames++;
     }
 
-    // 파이프 업데이트 및 그리기
-    pipes.forEach(pipe => {
-      pipe.update();
-      pipe.draw();
-    });
-
-    // 점수 표시
-    ctx.fillStyle = 'white';
-    ctx.font = '24px Arial';
-    ctx.fillText(`점수: ${score}`, 10, 30);
-
-    frames++;
-  }
-
-  requestAnimationFrame(gameLoop);
+    requestAnimationFrame(gameLoop);
 }
 
 // 게임 시작 함수
 function startGame() {
-  gameState = 'playing';
-  startScreen.classList.add('hidden');
-  gameOverScreen.classList.add('hidden');
-  resetGame();
+    gameState = 'playing';
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    resetGame();
 }
 
 // 게임 오버 함수
 function gameOver() {
-  if (gameState !== 'gameover') {
-    gameState = 'gameover';
-    finalScoreElement.textContent = score;
-    gameOverScreen.classList.remove('hidden');
-  }
+    if (gameState !== 'gameover') {
+        gameState = 'gameover';
+        finalScoreElement.textContent = score;
+        gameOverScreen.classList.remove('hidden');
+    }
 }
 
 // 게임 리셋 함수
 function resetGame() {
-  score = 0;
-  frames = 0;
-  pipes = [];
-  bird.reset();
-  gameState = 'playing'; // 게임 상태를 'playing'으로 변경
-  gameOverScreen.classList.add('hidden'); // 게임 오버 화면 숨김
+    score = 0;
+    frames = 0;
+    pipes = [];
+    bird.reset();
+    currentBackground = 'day'; // 게임 리셋 시 배경을 낮으로 초기화
 }
 
 // 게임 루프 시작
