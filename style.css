@@ -46,4 +46,23 @@ canvas {
   padding: 10px 20px;
   font-size: 18px;
   cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  background-color: #4CAF50;
+  color: white;
+  transition: background-color 0.3s;
+}
+
+#startButton:hover, #restartButton:hover {
+  background-color: #45a049;
+}
+
+#gameOverScreen p {
+  color: white;
+  font-size: 24px;
+  margin: 10px 0;
+}
+
+#gameOverScreen .highScore {
+  color: yellow;
 }
