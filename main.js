@@ -60,7 +60,6 @@ for (let key in images) {
         imagesLoaded++;
         if (imagesLoaded === totalImages) {
             // 모든 이미지가 로드된 후 추가 작업 가능
-            // 예: 초기 배경 그리기 등
         }
     };
 }
@@ -72,8 +71,8 @@ class Bird {
         this.y = canvas.height / 2;
         this.width = 34; // 이미지 너비에 맞게 조절
         this.height = 24; // 이미지 높이에 맞게 조절
-        this.gravity = 800; // 픽셀/초² 단위로 변경
-        this.lift = -300; // 픽셀/초 단위로 변경
+        this.gravity = 800; // 픽셀/초² 단위
+        this.lift = -300; // 픽셀/초 단위
         this.velocity = 0;
         this.flapping = false; // 새가 날개짓 중인지 여부
     }
@@ -123,7 +122,7 @@ class Pipe {
         this.x = canvas.width;
         this.width = 52; // 파이프 이미지 너비에 맞게 조절
         this.gap = 120;
-        this.speed = 200; // 픽셀/초 단위로 변경
+        this.speed = 200; // 픽셀/초 단위
         this.top = Math.floor(Math.random() * (canvas.height / 2)) + 20;
         this.bottom = this.top + this.gap;
         this.counted = false;
@@ -253,8 +252,6 @@ function gameLoop(timestamp) {
         ctx.fillStyle = 'white';
         ctx.font = '24px Arial';
         ctx.fillText(`점수: ${score}`, 10, 30);
-
-        frames++;
     }
 
     requestAnimationFrame(gameLoop);
@@ -291,7 +288,7 @@ function gameOver() {
 // 게임 리셋 함수
 function resetGame() {
     score = 0;
-    frames = 0;
+    lastTime = 0;
     pipes = [];
     bird.reset();
     currentBackground = 'day'; // 게임 리셋 시 배경을 낮으로 초기화
